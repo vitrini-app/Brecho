@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brechó</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#faf7f2;--fg:#2a2420;--mut:#7a6e65;--card:#fff;--bd:#e6ddd2;--ac:#b4472f;--acf:#fff;--ok:#2f7d55;--wr:#a8741a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1714;--fg:#f1e9e0;--mut:#a89c91;--card:#26211d;--bd:#3a332d;--ac:#e0735a;--acf:#1b1714;--ok:#58b583;--wr:#e0aa4f;color-scheme:dark}}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:960px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:0}h2{font-size:1.05rem;margin:22px 0 8px}
+.mut{color:var(--mut);font-size:.9rem}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+button,.btn{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:10px;padding:8px 14px;text-decoration:none;display:inline-block}
+.pri{background:var(--ac);color:var(--acf);border-color:var(--ac);font-weight:600}
+.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}.chip{padding:5px 12px;border-radius:99px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.ph{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:var(--bd);overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:cover}
+.cb{padding:10px;display:flex;flex-direction:column;gap:4px;flex:1}.cb button{margin-top:auto;width:100%}
+.tag{font-size:.78rem;font-weight:600}
+.s-disponivel{color:var(--ok)}.s-reservada{color:var(--wr)}.s-vendida{color:var(--mut)}.sold{opacity:.55}
+.banner{background:var(--card);border:1px solid var(--wr);border-radius:12px;padding:10px 14px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:5}
+.md{background:var(--bg);border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;max-height:92vh;overflow:auto}
+label{display:block;font-size:.88rem;margin:10px 0 3px}
+input,select,textarea{font:inherit;width:100%;padding:9px;border:1px solid var(--bd);border-radius:9px;background:var(--card);color:var(--fg)}
+textarea{height:84px;font-size:.75rem;word-break:break-all}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.qr{display:flex;justify-content:center;padding:10px;background:#fff;border-radius:10px;margin:10px 0}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:99px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<main id="app">Carregando…</main>
+<div id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// 1) Cole aqui os dados do seu projeto Supabase (Settings > API). A chave "anon" é pública por design.
+const SUPABASE_URL='https://qholdxotfxthjscycfzy.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFob2xkeG90Znh0aGpzY3ljZnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM5MjczNzAsImV4cCI6MjEwOTUwMzM3MH0.rrHS7wtsoy0eOzzU1cNUoL4yy5AuPL-CZEkKDqMvqbQ';
+
+const $=s=>document.querySelector(s);
+const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const R=n=>'R$ '+Number(n).toFixed(2).replace('.',',');
+const LBL={disponivel:'Disponível',reservada:'Reservada',vendida:'Vendida'};
+const slug=new URLSearchParams(location.search).get('b');
+let db,S={b:null,pecas:[],pedidos:[],user:null,filtro:'Todos',modal:null,meu:null},tt;
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),3000)}
+const mmss=ms=>{const s=Math.max(0,Math.floor(ms/1000));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+function tlv(i,v){return i+String(v.length).padStart(2,'0')+v}
+function crc(s){let c=0xFFFF;for(let i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(let j=0;j<8;j++)c=(c&0x8000)?((c<<1)^0x1021)&0xFFFF:(c<<1)&0xFFFF}return c.toString(16).toUpperCase().padStart(4,'0')}
+function pix(chave,valor,nome,cidade){const cl=t=>String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9 ]/g,'').toUpperCase();
+const p=tlv('00','01')+tlv('26',tlv('00','br.gov.bcb.pix')+tlv('01',chave))+tlv('52','0000')+tlv('53','986')+tlv('54',Number(valor).toFixed(2))+tlv('58','BR')+tlv('59',cl(nome).slice(0,25)||'BRECHO')+tlv('60',cl(cidade).slice(0,15)||'BRASIL')+tlv('62',tlv('05','***'))+'6304';return p+crc(p)}
+function comprimir(f){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,900/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(b=>r(b),'image/jpeg',.8)};i.onerror=()=>r(null);i.src=fr.result};fr.onerror=()=>r(null);fr.readAsDataURL(f)})}
+const saveMeu=()=>{try{localStorage.setItem('pedido:'+slug,JSON.stringify(S.meu))}catch(e){}};
+
+async function checkMeu(){if(!S.meu)return;const {data}=await db.rpc('status_pedido',{p_id:S.meu.id});if(data){S.meu.status=data.status;S.meu.expira_em=data.expira_em;saveMeu()}}
+async function loadLoja(){const {data:b}=await db.from('brechos').select('*').eq('slug',slug).maybeSingle();S.b=b;if(!b)return;await db.rpc('liberar_expiradas');const {data}=await db.from('pecas').select('*').eq('brecho_id',b.id).order('criado_em',{ascending:false});S.pecas=data||[];try{S.meu=JSON.parse(localStorage.getItem('pedido:'+slug))}catch(e){}await checkMeu()}
+async function loadPainel(){const {data:{session}}=await db.auth.getSession();S.user=session?session.user:null;if(!S.user)return;const {data:b}=await db.from('brechos').select('*').eq('owner',S.user.id).maybeSingle();S.b=b;if(!b)return;await db.rpc('liberar_expiradas');const [p,o]=await Promise.all([db.from('pecas').select('*').eq('brecho_id',b.id).order('criado_em',{ascending:false}),db.from('pedidos').select('*, pecas(titulo,preco)').eq('brecho_id',b.id).order('criado_em',{ascending:false})]);S.pecas=p.data||[];S.pedidos=o.data||[]}
+async function refresh(){if(slug)await loadLoja();else await loadPainel();render()}
+
+const card=p=>`<div class="card ${p.status==='vendida'?'sold':''}"><div class="ph">${p.foto_url?`<img src="${esc(p.foto_url)}" alt="${esc(p.titulo)}">`:'👗'}</div><div class="cb"><b>${esc(p.titulo)}</b><span class="mut">Tam. ${esc(p.tam)} · ${esc(p.marca)} · ${esc(p.estado)}</span><b>${R(p.preco)}</b><span class="tag s-${p.status}">${LBL[p.status]}</span>${slug&&p.status==='disponivel'?`<button class="pri" data-act="reservar" data-v="${p.id}">Reservar</button>`:''}</div></div>`;
+function lojaView(){if(!S.b)return '<h1>Brechó não encontrado</h1><p class="mut">Confira o link.</p>';
+const ds=[...new Set(S.pecas.map(p=>p.tam))],l=S.pecas.filter(p=>S.filtro==='Todos'||p.tam===S.filtro),m=S.meu&&S.meu.status==='ativo'&&Date.parse(S.meu.expira_em)>Date.now();
+return `<h1>${esc(S.b.nome)}</h1><div class="mut">Peças únicas: reserve e pague por Pix</div>`+(m?`<div class="banner"><span>Reserva ativa: <b>${esc(S.meu.titulo)}</b> · expira em <b data-exp="${esc(S.meu.expira_em)}">${mmss(Date.parse(S.meu.expira_em)-Date.now())}</b></span><button class="pri" data-act="pedido">Ver Pix</button></div>`:'')+`<div class="chips">${['Todos',...ds].map(t=>`<button class="chip ${t===S.filtro?'on':''}" data-act="filtro" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div><div class="grid">${l.map(card).join('')||'<p class="mut">Nenhuma peça por enquanto.</p>'}</div>`}
+function cfgFields(c,novo){return `<label>Nome do brechó</label><input name="nome" value="${esc(c.nome||'')}" required>${novo?`<label>Endereço do link (letras minúsculas, números e hífen)</label><input name="slug" pattern="[a-z0-9\\-]{3,40}" placeholder="meu-brecho" required>`:''}<div class="row"><div><label>WhatsApp (DDI e DDD)</label><input name="whats" value="${esc(c.whats||'55')}" inputmode="numeric" required></div><div><label>Minutos de reserva</label><input name="min" type="number" min="1" max="120" value="${c.reserva_min||30}" required></div></div><label>Chave Pix</label><input name="pix" value="${esc(c.pix||'')}" required><label>Cidade (para o Pix)</label><input name="cidade" value="${esc(c.cidade||'')}" required>`}
+function painelView(){
+if(!S.user)return `<h1>Painel do brechó</h1><p class="mut">Entre com seu e-mail: enviamos um link de acesso, sem senha.</p><form data-form="login"><label>E-mail</label><input name="email" type="email" required><p><button class="pri">Receber link</button></p></form>`;
+if(!S.b)return `<h1>Criar meu brechó</h1><form data-form="novo">${cfgFields({},true)}<p><button class="pri">Criar</button> <button type="button" data-act="sair">Sair</button></p></form>`;
+const url=location.origin+location.pathname+'?b='+S.b.slug,st={ativo:'Aguardando pagamento',pago:'Pago',expirado:'Expirado',cancelado:'Cancelado'};
+return `<div class="top"><h1>${esc(S.b.nome)}</h1><button data-act="sair">Sair</button></div><div class="box"><span>Link da sua loja:<br><b>${esc(url)}</b></span><span><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Abrir</a> <button data-act="link" data-v="${esc(url)}">Copiar</button></span></div>
+<h2>Pedidos</h2>${S.pedidos.map(o=>`<div class="box"><span><b>${esc(o.pecas?o.pecas.titulo:'Peça removida')}</b><br><span class="mut">${esc(o.nome)} · ${esc(o.whats)} · ${st[o.status]}</span></span>${o.status==='ativo'?`<span><button class="pri" data-act="pago" data-v="${o.id}">Confirmar pagamento</button> <button data-act="cancelar" data-v="${o.id}">Cancelar</button></span>`:''}</div>`).join('')||'<p class="mut">Nenhum pedido ainda.</p>'}
+<h2>Nova peça</h2><form data-form="peca"><label>Título</label><input name="titulo" required><div class="row"><div><label>Tamanho</label><input name="tam" required></div><div><label>Marca</label><input name="marca"></div></div><div class="row"><div><label>Estado</label><select name="estado"><option>Ótimo</option><option>Bom</option><option>Com detalhe</option></select></div><div><label>Preço (R$)</label><input name="preco" type="number" step="0.01" min="1" required></div></div><label>Foto</label><input name="foto" type="file" accept="image/*"><p><button class="pri">Adicionar peça</button></p></form>
+<h2>Minhas peças</h2>${S.pecas.map(p=>`<div class="box"><span>${esc(p.titulo)} · ${R(p.preco)} · <span class="s-${p.status}">${LBL[p.status]}</span></span>${p.status==='disponivel'?`<button data-act="remover" data-v="${p.id}">Remover</button>`:''}</div>`).join('')}
+<h2>Configurações</h2><form data-form="cfg">${cfgFields(S.b,false)}<p><button class="pri">Salvar</button></p></form>`}
+function modalHTML(){let h;const m=S.modal;
+if(m.t==='reservar'){const p=S.pecas.find(x=>x.id===m.id);h=`<h2>Reservar: ${esc(p.titulo)}</h2><p class="mut">${R(p.preco)} · a peça fica reservada por ${S.b.reserva_min} min.</p><form data-form="reserva"><label>Seu nome</label><input name="nome" required><label>Seu WhatsApp</label><input name="whats" inputmode="tel" required><p><button class="pri" style="width:100%">Reservar e ver Pix</button></p></form>`}
+else{const o=S.meu;if(o.status==='ativo'){const code=pix(S.b.pix,o.preco,S.b.nome,S.b.cidade),msg=`Oi! Reservei “${o.titulo}” (${R(o.preco)}) e já fiz o Pix.`;
+h=`<h2>Pague por Pix: ${R(o.preco)}</h2><p>Reserva de <b>${esc(o.titulo)}</b> expira em <b data-exp="${esc(o.expira_em)}">${mmss(Date.parse(o.expira_em)-Date.now())}</b>.</p><div class="qr" id="qr"></div><textarea id="pixtxt" readonly>${code}</textarea><p><button class="pri" data-act="copiar" style="width:100%">Copiar Pix copia e cola</button></p><p><a class="btn" style="width:100%;text-align:center" target="_blank" rel="noopener" href="https://wa.me/${esc(S.b.whats)}?text=${encodeURIComponent(msg)}">Já paguei: avisar no WhatsApp</a></p>`}
+else h=`<h2>${o.status==='pago'?'Pagamento confirmado!':'Reserva '+(o.status==='expirado'?'expirada':'cancelada')}</h2><p class="mut">${o.status==='pago'?'Obrigado! O brechó vai combinar a entrega.':'A peça voltou para a loja.'}</p>`}
+return `<div class="ov" data-act="fechar"><div class="md">${h}<p><button data-act="fechar" style="width:100%">Fechar</button></p></div></div>`}
+function drawQR(){const el=$('#qr');if(!el||!window.QRCode)return;try{new QRCode(el,{text:$('#pixtxt').value,width:176,height:176,correctLevel:QRCode.CorrectLevel.L})}catch(e){}}
+function render(){$('#app').innerHTML=(slug?lojaView():painelView())+(S.modal&&S.b?modalHTML():'');if(S.modal&&S.modal.t==='pedido'&&S.meu&&S.meu.status==='ativo')drawQR()}
+
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b||!db)return;const a=b.dataset.act,v=b.dataset.v;
+if(a==='fechar'&&b.classList.contains('ov')&&e.target!==b)return;
+if(a==='filtro')S.filtro=v;
+else if(a==='reservar')S.modal={t:'reservar',id:v};
+else if(a==='pedido')S.modal={t:'pedido'};
+else if(a==='fechar')S.modal=null;
+else if(a==='copiar'||a==='link'){const t=a==='link'?v:$('#pixtxt').value;try{await navigator.clipboard.writeText(t);toast('Copiado')}catch(_){toast('Não foi possível copiar')}return}
+else if(a==='pago'||a==='cancelar'){const {error}=await db.rpc('resolver_pedido',{p_id:v,p_acao:a==='pago'?'pago':'cancelar'});if(error)toast('Não foi possível atualizar o pedido');return refresh()}
+else if(a==='remover'){await db.from('pecas').delete().eq('id',v);return refresh()}
+else if(a==='sair'){await db.auth.signOut();S.user=null;S.b=null}
+render()});
+document.addEventListener('submit',async e=>{e.preventDefault();if(!db)return;const f=e.target,d=Object.fromEntries(new FormData(f)),k=f.dataset.form;
+if(k==='login'){const {error}=await db.auth.signInWithOtp({email:d.email,options:{emailRedirectTo:location.href.split('#')[0]}});toast(error?'Não foi possível enviar o link':'Link enviado: confira seu e-mail');return}
+if(k==='novo'||k==='cfg'){const row={nome:d.nome.trim(),whats:d.whats.replace(/\D/g,''),pix:d.pix.trim(),cidade:d.cidade.trim(),reserva_min:Math.min(120,Math.max(1,+d.min||30))};
+const r=k==='novo'?await db.from('brechos').insert({...row,owner:S.user.id,slug:d.slug.trim().toLowerCase()}):await db.from('brechos').update(row).eq('id',S.b.id);
+toast(r.error?'Não foi possível salvar (o endereço do link pode já existir)':'Salvo');return refresh()}
+if(k==='peca'){let url=null;if(d.foto&&d.foto.size){const blob=await comprimir(d.foto);if(blob){const path=S.user.id+'/'+Date.now()+'.jpg',up=await db.storage.from('fotos').upload(path,blob,{contentType:'image/jpeg'});if(!up.error)url=db.storage.from('fotos').getPublicUrl(path).data.publicUrl}}
+const {error}=await db.from('pecas').insert({brecho_id:S.b.id,titulo:d.titulo.trim(),tam:d.tam.trim(),marca:d.marca.trim()||'Sem marca',estado:d.estado,preco:+d.preco,foto_url:url});toast(error?'Não foi possível adicionar':'Peça adicionada');return refresh()}
+if(k==='reserva'){const p=S.pecas.find(x=>x.id===S.modal.id);const {data,error}=await db.rpc('reservar_peca',{p_peca:p.id,p_nome:d.nome,p_whats:d.whats});
+if(error){toast('Não foi possível reservar: a peça pode ter acabado de ser reservada.');S.modal=null}
+else{S.meu={id:data.id,titulo:p.titulo,preco:p.preco,status:'ativo',expira_em:data.expira_em};saveMeu();S.modal={t:'pedido'}}
+return refresh()}});
+setInterval(()=>document.querySelectorAll('[data-exp]').forEach(el=>el.textContent=mmss(Date.parse(el.dataset.exp)-Date.now())),1000);
+setInterval(async()=>{if(db&&slug&&S.b&&!(S.modal&&S.modal.t==='reservar'))await refresh()},15000);
+(async()=>{if(SUPABASE_URL.startsWith('COLE')){$('#app').innerHTML='<h2>Falta configurar</h2><p>Cole a URL e a chave do Supabase no topo do arquivo index.html (veja o LEIA-ME).</p>';return}
+db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);db.auth.onAuthStateChange(ev=>{if(!slug&&(ev==='SIGNED_IN'||ev==='SIGNED_OUT'))refresh()});await refresh()})();
+</script>
+</body>
+</html>
