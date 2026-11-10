@@ -78,7 +78,7 @@ async function loadLoja(){const {data:b}=await db.from('brechos').select('*').eq
 async function loadPainel(){const {data:{session}}=await db.auth.getSession();S.user=session?session.user:null;if(!S.user)return;const {data:b}=await db.from('brechos').select('*').eq('owner',S.user.id).maybeSingle();S.b=b;if(!b)return;await db.rpc('liberar_expiradas');const [p,o]=await Promise.all([db.from('pecas').select('*').eq('brecho_id',b.id).order('criado_em',{ascending:false}),db.from('pedidos').select('*, pecas(titulo,preco)').eq('brecho_id',b.id).order('criado_em',{ascending:false})]);S.pecas=p.data||[];S.pedidos=o.data||[];const a=await db.from('avisos').select('telegram_chat_id').eq('brecho_id',b.id).maybeSingle();S.chat=a.data?a.data.telegram_chat_id:''}
 async function refresh(){if(pag){render();return}if(slug)await loadLoja();else{await loadPainel();avisoPainel()}render()}
 
-const CATS=[['Vestidos','👗'],['Camisetas','👕'],['Calças e saias','👖'],['Casacos','🧥'],['Bolsas','👜'],['Calçados','👟'],['Acessórios','💍'],['Outros','🛍️']];
+const CATS=[['Vestidos','👗'],['Blusas','👚'],['Calças e saias','👖'],['Casacos','🧥'],['Bolsas','👜'],['Calçados','👟'],['Acessórios','💍'],['Outros','🛍️']];
 function favs(){try{return JSON.parse(localStorage.getItem('fav:'+slug))||[]}catch(e){return[]}}
 function faixaOk(x){const f=S.faixa||'todas';x=Number(x);if(f==='todas')return true;if(f==='200+')return x>=200;const [a,b]=f.split('-').map(Number);return x>=a&&x<b}
 function filtrar(){const q=(S.q||'').toLowerCase(),cat=S.cat||'Todas',f=favs();let l=S.pecas.filter(p=>(cat==='Todas'||p.categoria===cat)&&(S.filtro==='Todos'||p.tam===S.filtro)&&(!q||(p.titulo+' '+p.marca+' '+(p.descricao||'')).toLowerCase().includes(q))&&faixaOk(p.preco)&&(!S.fav||f.includes(p.id)));
