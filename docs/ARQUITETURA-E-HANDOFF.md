@@ -1,6 +1,6 @@
 # Brechó: arquitetura, regras e passagem de bastão
 
-Documento escrito em 11 de novembro de 2026, ao fim da "Atualização 8" do código. Serve para qualquer pessoa ou IA continuar o projeto sem depender do histórico da conversa. Está em português porque o usuário trabalha em português.
+Documento em português para qualquer pessoa ou IA continuar o projeto sem depender do histórico da conversa. Atualizado durante a Atualização 10; a migração nova e o fluxo de sacola ainda precisam ser aplicados e testados no Supabase real.
 
 Arquivos do projeto: `index.html` (todo o site), `schema.sql` e `migracao-1` a `migracao-5` (banco de dados), `LEIA-ME.md` (passo a passo de instalação e de cada atualização) e este arquivo.
 
@@ -90,7 +90,9 @@ Referências de licitações (caso o projeto B seja retomado): Alerta Licitaçã
 | 5 | Carrossel de fotos na entrada da loja | só `index.html` | Visível em captura de tela do usuário |
 | 6 | Departamentos por forma de medição (roupas, calçados, bolsas e acessórios, outros) | só `index.html` | Entregue; sem confirmação explícita |
 | 7 | Logística: formas de receber, frete, endereço protegido, mapa, página do pedido, etapas, rastreio, comprovante, "Recebi minha peça", depoimentos, informar pagamento, link de cartão, pagar na retirada | `migracao-5-logistica.sql`, `index.html` | **Entregue; sem confirmação de que foi aplicada. O SQL nunca foi executado em um Postgres real** |
-| 8 | Novo visual: cabeçalho fixo, filtros laterais, página da peça em duas colunas, fotos com "contain" sobre fundo desfocado, indicadores de carregamento, rodapé | só `index.html` | Entregue agora; só passou por verificação de sintaxe e simulação |
+| 8 | Novo visual: cabeçalho fixo, filtros laterais, página da peça em duas colunas, fotos com "contain" sobre fundo desfocado, indicadores de carregamento, rodapé | só `index.html` | Entregue; passou por verificação de sintaxe e simulação na época |
+| 9 — Vitrine mais profissional | Refinamento visual da loja e do painel; navegação e filtros mais claros; adaptação para telas pequenas e melhorias de foco e movimento | só `index.html` | Commit feito pelo usuário; renderização conferida no navegador com dados de demonstração. Sem alteração de banco |
+| 10 — Conta, moderação, fotos e sacola | Troca de senha e moderação de depoimentos; gestão de até 5 fotos; sacola de até 10 peças com reserva atômica, frete único e Pix único | `index.html`, `migracao-6-sacola-e-fotos.sql` | Implementado no código. A migração 6 e os fluxos novos não foram executados nem validados no Supabase real. A versão publicada no GitHub não foi confirmada |
 
 **Antes de qualquer trabalho novo, confirme com o usuário o que está de fato aplicado** (quais migrações rodaram e qual `index.html` está no GitHub).
 
@@ -142,8 +144,9 @@ Referências de licitações (caso o projeto B seja retomado): Alerta Licitaçã
 | `migracao-2-piloto.sql` | `entrega_info`, `pedidos.entrega`, nova `reservar_peca`, `editar_peca`, `marcar_peca` |
 | `migracao-3-abas.sql` | Colunas de identidade da loja |
 | `migracao-4-vitrine.sql` | Capa, categoria, descrição, medidas, fotos; novo `editar_peca` |
-| `migracao-5-logistica.sql` | Logística, endereços, depoimentos e várias funções |
-| `LEIA-ME.md` | Instalação e notas de cada atualização |
+| `migracao-5-logistica.sql` | Logística, endereços, depoimentos e várias funções (não está neste conjunto de arquivos) |
+| `migracao-6-sacola-e-fotos.sql` | Reservas em sacola, limite de reservas ativo compartilhado, atualização de funções de pedido e RPC para editar fotos |
+| `LEIA-ME.md` | Não está neste conjunto de arquivos; as instruções operacionais estão neste documento |
 
 ### 4.2 Constantes no topo do script (o usuário precisa preencher a cada novo `index.html`)
 
@@ -261,11 +264,14 @@ A recuperação de senha volta para `/` com o token no hash e dispara o evento `
 
 ### 5.8 Visual e experiência
 
-- **Tokens:** variáveis CSS (`--bg`, `--fg`, `--mut`, `--card`, `--bd`, `--ac`, `--acf`, `--ok`, `--wr`, `--sh`), com tema escuro automático. A cor da loja substitui `--ac`, e o contraste do texto é calculado pela luminância.
-- **Layout:** cabeçalho fixo com marca, abas, favoritas e "Meu pedido". Em telas largas, filtros ficam numa coluna lateral fixa. Em telas estreitas, viram um bloco recolhível. A página da peça tem duas colunas, com galeria fixa à esquerda.
+- **Tokens:** variáveis CSS (`--bg`, `--fg`, `--mut`, `--card`, `--bd`, `--ac`, `--acf`, `--ok`, `--wr` e sombras), com tema escuro automático. A cor da loja substitui `--ac`, e o contraste do texto é calculado pela luminância.
+- **Layout:** a loja tem cabeçalho de marca fixo e abas próprias; busca, filtros e ordenação ficam agrupados antes da grade. Na Atualização 9, a navegação horizontal e os controles se adaptam a telas estreitas, assim como a grade de produtos. As abas do painel do dono permanecem separadas das abas da loja.
 - **Fotos:** exibidas com `object-fit:contain` sobre uma cópia da mesma foto desfocada e ampliada (técnica de mercado), para nunca cortar a peça. Isso corrigiu o problema relatado de fotos horizontais, como calçados, aparecerem cortadas no carrossel em telas largas. A capa da loja continua com `cover`.
 - **Carregamento:** esqueleto brilhante enquanto as fotos carregam, entrada suave, barra de progresso global, esqueleto de cartões na primeira carga.
 - **Acessibilidade:** foco visível, rótulos nas fotos e botões, respeito a "reduzir movimento".
+- **Atualização 9 — Vitrine mais profissional:** refinou a apresentação com tons neutros, títulos serifados, cartões com bordas e sombras sutis, estados de interação nos botões e uma área destacada para busca e filtros. O cabeçalho da loja fica fixo durante a rolagem; as abas da loja rolam horizontalmente quando necessário. Em telas pequenas, a grade se adapta, os controles ficam empilhados e os modais passam a abrir como folha inferior. O painel também recebe o tratamento visual dos formulários de entrada e das abas.
+- A atualização é apenas de HTML/CSS e classes de apresentação: não adiciona tabelas, colunas, funções SQL nem altera as regras de reserva, pagamento ou entrega.
+- **Acessibilidade visual da Atualização 9:** foco de teclado mais evidente, alvos de interação com tamanho mínimo, suporte a `prefers-reduced-motion` e manutenção do tema escuro automático.
 
 ---
 
@@ -359,7 +365,7 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 - RN-11. Retirada: frete zero; a cliente escolhe um horário se o dono cadastrou horários.
 - RN-12. Entrega local: o frete vem da tabela de bairros ("Bairro: valor", uma linha por bairro, comparação sem diferenciar maiúsculas); se o bairro não estiver na tabela, usa a taxa única; se não houver nenhuma, é indisponível.
 - RN-13. Envio: o frete vem da região do estado informado (Sudeste, Sul, Centro-Oeste, Nordeste, Norte). Região sem valor cadastrado é indisponível.
-- RN-14. Frete grátis: para entrega local e envio, se o preço da peça for maior ou igual a `frete_gratis_acima`. O limite compara o preço da peça, sem o frete.
+- RN-14. Frete grátis: para entrega local e envio, se o subtotal (preço da peça individual ou soma da sacola) for maior ou igual a `frete_gratis_acima`. O limite compara o subtotal, sem o frete.
 - RN-15. Entrega local e envio exigem endereço. O total do pedido é preço mais frete. **O frete é sempre recalculado no banco**, nunca confiado ao navegador (a prévia na tela é só informativa).
 - RN-16. Não há cálculo automático dos Correios; os valores são tabelas do dono.
 
@@ -401,6 +407,13 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 - RN-41. Login por e-mail e senha (mínimo de 6 caracteres). Recuperação por e-mail sujeita ao limite do Supabase.
 - RN-42. Termos de uso e Política de privacidade são **modelos básicos** e precisam de revisão profissional antes de uso com clientes reais.
 - RN-43. A cor da loja precisa ser um hexadecimal válido. O texto sobre a cor é escolhido por luminância.
+- RN-44. Sacola: cliente pode escolher até 10 peças do mesmo brechó; a seleção fica no `localStorage` do navegador e é filtrada quando a vitrine atualiza.
+- RN-45. Reserva da sacola é atômica: ou todas as peças ainda disponíveis ficam reservadas, ou nenhuma. O banco valida novamente as peças e calcula o subtotal, frete único e total; o navegador só mostra uma prévia.
+- RN-46. O frete grátis compara o subtotal da sacola com `frete_gratis_acima`. O pedido agrupado gera um único Pix e compartilha as etapas, endereço, rastreio e comprovante.
+- RN-47. O limite de duas reservas ativas por WhatsApp é compartilhado entre pedidos unitários e pedidos de sacola; telefones são comparados apenas pelos dígitos.
+- RN-48. O painel deve listar pedidos unitários e agrupados juntos. A RPC `meu_pedido` também deve devolver as peças da sacola, sem exigir acesso público direto às tabelas.
+- RN-49. O dono pode manter, remover e adicionar fotos em uma peça não reservada, com limite total de cinco; a RPC `editar_fotos_peca` valida propriedade, URLs HTTPS e estado da peça.
+- RN-50. O aviso opcional do Telegram da sacola deve ser disparado após a transação inserir os itens; falha de notificação não deve impedir a reserva e precisa ser registrada como warning no banco.
 
 ---
 
@@ -419,6 +432,7 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 - **UC-11 Gerir pedidos.** Ver quem informou o pagamento, confirmar o pagamento ou cancelar, avançar as etapas, registrar rastreio e foto do comprovante, abrir o WhatsApp da cliente com a mensagem pronta.
 - **UC-12 Receber avisos.** Alerta no painel (som, aviso e contagem na aba) e, opcionalmente, mensagem no Telegram.
 - **UC-13 Divulgar.** Copiar o link da loja (aba Resumo) para a bio do Instagram.
+- **UC-14 Editar fotos.** Manter/remover fotos existentes e adicionar outras sem exceder cinco; peças reservadas não permitem alteração.
 
 ### Cliente
 
@@ -429,6 +443,7 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 - **UC-24 Acompanhar o pedido.** Pela página do pedido (link próprio, que também chega na mensagem do dono): etapas, valores, onde retirar (com rota), rastreio e comprovante.
 - **UC-25 Confirmar o recebimento e deixar depoimento** (RN-24).
 - **UC-26 Voltar ao pedido depois.** O navegador guarda o último pedido daquela loja; também é possível abrir o link `?pedido=`.
+- **UC-27 Montar sacola.** Adicionar/remover até 10 peças do mesmo brechó, escolher uma única forma de receber, conferir subtotal/frete/total e criar uma reserva agrupada com uma única confirmação e um único Pix.
 
 ### Operador (o usuário, dono do produto)
 
@@ -484,6 +499,7 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 | D19 | Busca de CEP pelo ViaCEP, só no painel | Gratuito, uma consulta por cadastro | CEP pelo cliente na reserva (UF é escolhida à mão) |
 | D20 | Estado da cliente em `localStorage` (último pedido, favoritas) | Sem conta | Banco |
 | D21 | Cada conta, um brechó | Simplifica regras de acesso | Várias lojas por conta |
+| D22 | Refinamento de interface com CSS responsivo, sem framework nem build | Mantém publicação simples pelo GitHub Pages e preserva o fluxo existente | Introduzir dependência ou alterar a arquitetura do site |
 
 ---
 
@@ -504,7 +520,7 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 ### 12.1 Montar do zero
 
 1. Criar projeto no Supabase (plano gratuito).
-2. No SQL Editor, rodar `schema.sql` e depois `migracao-2`, `3`, `4` e `5` (e `1`, se for usar Telegram).
+2. No SQL Editor, rodar `schema.sql` e depois `migracao-2`, `3`, `4` e `5` (e `1`, se for usar Telegram). A migração 6 deve ser executada somente depois de confirmar que a migração 5 está aplicada.
 3. Em Settings, API, copiar a URL e a chave pública.
 4. Em Authentication, Sign In / Providers, Email: ativado e, se achar a opção, desligar "Confirm email". Senão, criar contas manualmente com Auto Confirm.
 5. Criar um repositório público no GitHub, enviar o `index.html` com as chaves coladas, ativar Settings, Pages, Deploy from a branch, `main`, `/ (root)`.
@@ -537,12 +553,17 @@ Criar um bot no `@BotFather` (guardar token e usuário). Rodar `migracao-1`. Gua
 ## 13. Qualidade e testes
 
 **O que foi verificado**
-- Sintaxe do JavaScript (`node --check`) após cada atualização.
-- Uma simulação em Node, com navegador e Supabase falsos, que monta todas as telas (loja, abas, peça, pedido, modais, abas do painel, rodapé) e testa o cálculo de frete e o código Pix. Todas passaram na versão atual.
+- As versões anteriores tiveram verificações de sintaxe/simulação documentadas em cada atualização; não há Node.js instalado neste ambiente para repetir `node --check`.
+- **Atualização 10:** o script foi carregado no navegador integrado sem erro de sintaxe. Com dados sintéticos e RPCs simuladas, foram exercitados: render da vitrine, adicionar itens, limite de 10, prévia do total/frete, chamada de reserva e leitura do Pix/QR, tela do pedido agrupado, painel com itens da sacola e remoção de foto existente. Nenhum dado foi enviado ao Supabase.
 - Essas verificações já pegaram erros reais (aspas, chaves, ordem de declarações).
+- **Atualização 9:** a página abriu no navegador integrado e a vitrine foi renderizada com dados de demonstração; foram conferidos os cartões de produto, as três abas e o comportamento CSS do cabeçalho fixo e do painel de filtros. Essa verificação não usou uma loja nem um Supabase reais.
+- **Atualização 10 (parcial):** as telas de troca de senha e moderação de depoimentos foram exercitadas no navegador com dados e respostas Supabase simulados. A validação de senha divergente e a chamada de remoção simulada foram conferidas; nada foi gravado ou alterado no Supabase real.
+- **Atualização 10:** sacola no navegador, formulário de reserva agrupada, gestão de fotos, leitura de itens do pedido e ações no painel foram implementados. A migração corrige o gatilho para notificar depois da inclusão dos itens e registra falhas de Telegram como warning; ainda é necessário testar o SQL no Supabase de desenvolvimento e simular todos os fluxos de banco.
 
 **O que NÃO foi verificado**
-- Nenhum arquivo SQL foi executado em um Postgres real. **A migração 5, em especial, é grande e pode ter erro de sintaxe.** Se falhar, pegue a mensagem de erro e corrija o trecho indicado.
+- Não há Node.js nem cliente PostgreSQL disponível neste ambiente; o JavaScript foi conferido pelo navegador, mas não houve validação sintática do SQL.
+- As alterações da Atualização 10 ainda não foram testadas com uma sessão autenticada ou políticas RLS reais.
+- Nenhum arquivo SQL foi executado em um Postgres real. A migração 5 e a nova migração 6 não foram executadas aqui. A migração 6 depende da estrutura criada pela migração 5; não executar até confirmar esse pré-requisito.
 - O fluxo completo contra um Supabase real (reserva com frete, página do pedido, etapas, recebimento, depoimentos, Telegram).
 - O código Pix em aplicativos de banco diferentes (o usuário deve abrir o QR no banco e conferir nome e valor).
 - Navegadores e celulares variados, desempenho com muitas peças, e-mails de recuperação de senha.
@@ -551,11 +572,14 @@ Criar um bot no `@BotFather` (guardar token e usuário). Rodar `migracao-1`. Gua
 1. Entrar com senha; conferir os cartões do Resumo e o checklist.
 2. Preencher as abas Loja e Entrega; abrir a loja em aba anônima e conferir cabeçalho, capa, carrossel, filtros, abas Entrega e Contato (mapa).
 3. Cadastrar uma bolsa, um sapato e uma blusa, com 3 fotos em uma delas; conferir tamanhos por departamento e a galeria.
-4. Reservar com cada forma de receber; conferir frete, total e Pix no banco.
+4. Reservar uma peça com cada forma de receber; conferir frete, total e Pix no banco.
 5. Confirmar o pagamento e avançar as etapas; conferir a página do pedido (endereço liberado, rastreio, comprovante).
 6. "Recebi minha peça" com comentário; conferir o depoimento na aba Contato.
 7. Editar, marcar como vendida fora do site e devolver à venda.
 8. Abrir Termos e Privacidade; conferir o e-mail de contato.
+9. Na loja de teste, adicionar 2 a 3 peças à sacola, remover uma, confirmar subtotal e frete único e fazer uma reserva; verificar o mesmo pedido no painel e no link público.
+10. Tentar reservar uma peça já reservada por outra sessão e testar o limite de 10; confirmar que a falha não deixa nenhuma peça da sacola reservada.
+11. No painel, manter/remover fotos, adicionar até cinco no total e tentar salvar uma sexta; conferir a galeria pública.
 
 ---
 
@@ -567,7 +591,7 @@ Criar um bot no `@BotFather` (guardar token e usuário). Rodar `migracao-1`. Gua
 4. A migração 5 precisa ser executada e validada em um banco real.
 5. Duplicidades: o campo `cidade` aparece nas abas Loja e Entrega; `pedidos.entrega` (rótulo) e `pedidos.metodo` guardam quase a mesma coisa; a coluna `brechos.endereco` e a função `status_pedido` são legadas.
 6. Reserva com pagamento na retirada mostra o contador como "1440:00" em vez de horas.
-7. O dono não consegue remover um depoimento, trocar fotos de uma peça existente nem alterar a senha dentro do painel.
+7. As telas de alteração de senha, moderação de depoimentos e troca de fotos existem, mas aguardam validação no Supabase real.
 8. Um único brechó por conta; sem painel de operador para você ver todos os brechós.
 9. O cálculo de frete depende do estado informado pela cliente.
 10. Prévia do link no WhatsApp e no Instagram mostra um título genérico, porque o site é montado no navegador. Resolver exigiria renderização no servidor.
@@ -586,7 +610,7 @@ Criar um bot no `@BotFather` (guardar token e usuário). Rodar `migracao-1`. Gua
 
 **Durante o piloto**
 4. Loja de demonstração com 10 ou mais peças; vídeo de 30 a 40 segundos; abordar 10 brechós (modelo no Apêndice C); medir o critério da seção 1.3.
-5. Tela do dono para remover depoimentos e trocar fotos; troca de senha no painel; sacola com várias peças em um único Pix.
+5. Confirmar que a migração 5 está aplicada. Em projeto de teste, executar a migração 6, validar RLS e testar o fluxo de sacola, fotos, recebimento, depoimentos e senha antes de atualizar a loja de produção.
 
 **Depois de validar**
 6. Cobrança de mensalidade (CPF ou CNPJ, gateway); confirmação automática do Pix; SMTP próprio; estatísticas de visitas e cliques; painel do operador; lista de espera por tamanho; domínio próprio; prévia de link por renderização no servidor; taxa por região via serviço de frete com chave guardada em servidor.
