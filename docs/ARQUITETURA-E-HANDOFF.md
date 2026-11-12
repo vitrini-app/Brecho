@@ -1,6 +1,6 @@
 # Brechó: arquitetura, regras e passagem de bastão
 
-Documento em português para qualquer pessoa ou IA continuar o projeto sem depender do histórico da conversa. Atualizado durante a Atualização 10; a migração nova e o fluxo de sacola ainda precisam ser aplicados e testados no Supabase real.
+Documento em português para qualquer pessoa ou IA continuar o projeto sem depender do histórico da conversa. Atualizado após a Atualização 10 e a confirmação do usuário de que a migração 6, a edição de fotos e a sacola funcionaram no Supabase/site reais.
 
 Arquivos do projeto: `index.html` (todo o site), `schema.sql` e `migracao-1` a `migracao-5` (banco de dados), `LEIA-ME.md` (passo a passo de instalação e de cada atualização) e este arquivo.
 
@@ -92,7 +92,7 @@ Referências de licitações (caso o projeto B seja retomado): Alerta Licitaçã
 | 7 | Logística: formas de receber, frete, endereço protegido, mapa, página do pedido, etapas, rastreio, comprovante, "Recebi minha peça", depoimentos, informar pagamento, link de cartão, pagar na retirada | `migracao-5-logistica.sql`, `index.html` | **Entregue; sem confirmação de que foi aplicada. O SQL nunca foi executado em um Postgres real** |
 | 8 | Novo visual: cabeçalho fixo, filtros laterais, página da peça em duas colunas, fotos com "contain" sobre fundo desfocado, indicadores de carregamento, rodapé | só `index.html` | Entregue; passou por verificação de sintaxe e simulação na época |
 | 9 — Vitrine mais profissional | Refinamento visual da loja e do painel; navegação e filtros mais claros; adaptação para telas pequenas e melhorias de foco e movimento | só `index.html` | Commit feito pelo usuário; renderização conferida no navegador com dados de demonstração. Sem alteração de banco |
-| 10 — Conta, moderação, fotos e sacola | Troca de senha e moderação de depoimentos; gestão de até 5 fotos; sacola de até 10 peças com reserva atômica, frete único e Pix único | `index.html`, `migracao-6-sacola-e-fotos.sql` | Implementado no código. A migração 6 e os fluxos novos não foram executados nem validados no Supabase real. A versão publicada no GitHub não foi confirmada |
+| 10 — Conta, moderação, fotos e sacola | Troca de senha e moderação de depoimentos; gestão de até 5 fotos; sacola de até 10 peças com reserva atômica, frete único e Pix único | `index.html`, `migracao-6-sacola-e-fotos.sql` | Migração 6 executada pelo usuário sem erro; usuário confirmou que edição de fotos e sacola funcionaram. Não foram detalhados todos os cenários-limite |
 
 **Antes de qualquer trabalho novo, confirme com o usuário o que está de fato aplicado** (quais migrações rodaram e qual `index.html` está no GitHub).
 
@@ -558,13 +558,14 @@ Criar um bot no `@BotFather` (guardar token e usuário). Rodar `migracao-1`. Gua
 - Essas verificações já pegaram erros reais (aspas, chaves, ordem de declarações).
 - **Atualização 9:** a página abriu no navegador integrado e a vitrine foi renderizada com dados de demonstração; foram conferidos os cartões de produto, as três abas e o comportamento CSS do cabeçalho fixo e do painel de filtros. Essa verificação não usou uma loja nem um Supabase reais.
 - **Atualização 10 (parcial):** as telas de troca de senha e moderação de depoimentos foram exercitadas no navegador com dados e respostas Supabase simulados. A validação de senha divergente e a chamada de remoção simulada foram conferidas; nada foi gravado ou alterado no Supabase real.
-- **Atualização 10:** sacola no navegador, formulário de reserva agrupada, gestão de fotos, leitura de itens do pedido e ações no painel foram implementados. A migração corrige o gatilho para notificar depois da inclusão dos itens e registra falhas de Telegram como warning; ainda é necessário testar o SQL no Supabase de desenvolvimento e simular todos os fluxos de banco.
+- **Atualização 10:** sacola no navegador, formulário de reserva agrupada, gestão de fotos, leitura de itens do pedido e ações no painel foram implementados. A migração corrige o gatilho para notificar depois da inclusão dos itens e registra falhas de Telegram como warning. O usuário informou que executou a migração sem erro; não houve validação independente nem teste de todos os cenários de banco.
+- **Validação posterior da Atualização 10 pelo usuário:** confirmou que a migração 6 rodou sem erro e que a edição de fotos e a sacola deram certo no site. O usuário não descreveu o roteiro exato nem confirmou o teste de cada cenário-limite.
 
 **O que NÃO foi verificado**
 - Não há Node.js nem cliente PostgreSQL disponível neste ambiente; o JavaScript foi conferido pelo navegador, mas não houve validação sintática do SQL.
-- As alterações da Atualização 10 ainda não foram testadas com uma sessão autenticada ou políticas RLS reais.
-- Nenhum arquivo SQL foi executado em um Postgres real. A migração 5 e a nova migração 6 não foram executadas aqui. A migração 6 depende da estrutura criada pela migração 5; não executar até confirmar esse pré-requisito.
-- O fluxo completo contra um Supabase real (reserva com frete, página do pedido, etapas, recebimento, depoimentos, Telegram).
+- Não foi feito aqui um teste independente do Supabase real; a confirmação da execução da migração 6 e dos dois fluxos principais veio do usuário.
+- Cenários de concorrência na reserva atômica, limite de duas reservas ativas, limite de 10 peças, expiração/cancelamento, frete nas diferentes formas de entrega, pedido agrupado no painel, recebimento/depoimento e notificação Telegram ainda precisam de verificação específica.
+- O código Pix deve ser conferido no aplicativo bancário antes de usar em vendas reais.
 - O código Pix em aplicativos de banco diferentes (o usuário deve abrir o QR no banco e conferir nome e valor).
 - Navegadores e celulares variados, desempenho com muitas peças, e-mails de recuperação de senha.
 
