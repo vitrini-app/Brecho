@@ -80,6 +80,26 @@ button:active,.btn:active{transform:translateY(0)}
 .order-card.order-closed{opacity:.82}
 .order-status{display:inline-flex;align-items:center;border:1px solid var(--bd);border-radius:99px;padding:3px 9px;font-size:.78rem;font-weight:650}
 @media(max-width:680px){.item-detail{grid-template-columns:1fr}.item-info{align-self:auto}.item-gallery .ph{aspect-ratio:1}.order-filters button{flex:1 1 calc(50% - 8px)}}
+.dashboard-view>.top{padding:clamp(18px,3vw,26px)!important;margin:0 0 16px!important;border:1px solid color-mix(in srgb,var(--ac) 20%,var(--bd));border-radius:20px;background:linear-gradient(115deg,color-mix(in srgb,var(--ac) 13%,var(--card)),var(--card) 72%);box-shadow:var(--shadow-sm)}
+.dashboard-view>.top h1{font-size:clamp(1.6rem,3vw,2.1rem)}
+.dashboard-view>.top button{border-color:color-mix(in srgb,var(--ac) 22%,var(--bd))}
+.dashboard-view>.tabs{background:color-mix(in srgb,var(--ac) 7%,var(--bg))!important;border-color:color-mix(in srgb,var(--ac) 14%,var(--bd))!important}
+.dashboard-view>.tabs button.on{background:var(--ac)!important;color:var(--acf)!important;border-color:var(--ac)!important}
+.dashboard-view .grid>.box{border-top:3px solid color-mix(in srgb,var(--ac) 42%,var(--bd));background:linear-gradient(150deg,color-mix(in srgb,var(--ac) 7%,var(--card)),var(--card) 76%)}
+.dashboard-view .grid>.box:nth-child(2){border-top-color:color-mix(in srgb,var(--wr) 70%,var(--bd));background:linear-gradient(150deg,color-mix(in srgb,var(--wr) 8%,var(--card)),var(--card) 76%)}
+.dashboard-view .grid>.box:nth-child(3){border-top-color:color-mix(in srgb,var(--ok) 65%,var(--bd));background:linear-gradient(150deg,color-mix(in srgb,var(--ok) 7%,var(--card)),var(--card) 76%)}
+.dashboard-view .grid>.box:nth-child(4){border-top-color:color-mix(in srgb,#7284a8 65%,var(--bd));background:linear-gradient(150deg,color-mix(in srgb,#7284a8 8%,var(--card)),var(--card) 76%)}
+.dashboard-view .order-filters button.on{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.dashboard-view .order-card.order-attention{background:linear-gradient(110deg,color-mix(in srgb,var(--wr) 7%,var(--card)),var(--card) 62%)}
+.dashboard-view .order-card.order-progress{background:linear-gradient(110deg,color-mix(in srgb,var(--ac) 6%,var(--card)),var(--card) 62%)}
+.dashboard-view .order-card.order-done{background:linear-gradient(110deg,color-mix(in srgb,var(--ok) 7%,var(--card)),var(--card) 62%)}
+.customer-view>h2:first-of-type{padding:20px clamp(16px,3vw,26px);border:1px solid color-mix(in srgb,var(--ac) 22%,var(--bd));border-radius:18px;background:linear-gradient(115deg,color-mix(in srgb,var(--ac) 13%,var(--card)),var(--card) 76%);box-shadow:var(--shadow-sm)}
+.customer-view>p:has(>b){padding:14px 16px;margin:12px 0;background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow-sm)}
+.customer-view>.box{border-left:4px solid color-mix(in srgb,var(--ac) 44%,var(--bd));background:linear-gradient(110deg,color-mix(in srgb,var(--ac) 5%,var(--card)),var(--card) 66%)}
+.customer-view>h2:not(:first-of-type){display:flex;align-items:center;gap:10px;margin-top:26px}
+.customer-view>h2:not(:first-of-type)::before{content:"";width:5px;height:1.2em;border-radius:99px;background:var(--ac)}
+.customer-view>p:has(>.pri){margin:18px 0}
+.customer-view>p:has(>.pri)>.pri{padding-inline:22px}
 .bag-line{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd)}
 .bag-line:last-child{border-bottom:0}
 .bag-line img{width:58px;height:58px;object-fit:contain;background:var(--bd);border-radius:10px}
@@ -280,7 +300,7 @@ else if(o.status==='ativo'){h=`<h2>Reserva feita</h2><p>Você paga na retirada. 
 else h=`<h2>${o.status==='pago'?'Pagamento confirmado!':'Reserva '+(o.status==='expirado'?'expirada':'cancelada')}</h2><p class="mut">${o.status==='pago'?'Obrigado! Acompanhe a entrega na página do pedido.':'A peça voltou para a loja.'}</p><p><button class="pri" data-act="verpedido" style="width:100%">Ver meu pedido</button></p>`}
 return `<div class="ov" data-act="fechar"><div class="md">${h}<p><button data-act="fechar" style="width:100%">Fechar</button></p></div></div>`}
 function drawQR(){const el=$('#qr');if(!el||!window.QRCode)return;try{new QRCode(el,{text:$('#pixtxt').value,width:176,height:176,correctLevel:QRCode.CorrectLevel.L})}catch(e){}}
-function render(){aplicarCor();if(slug&&S.b)document.title=S.b.nome;$('#app').innerHTML=(pag?paginaView():slug?lojaView():painelView())+RODAPE+(S.modal&&S.b?modalHTML():'');if(S.modal&&S.modal.t==='pedido'&&S.meu&&S.meu.status==='ativo')drawQR();if(S.modal&&['reservar','sacola'].includes(S.modal.t))fretePrev()}
+function render(){aplicarCor();if(slug&&S.b)document.title=S.b.nome;const app=$('#app');app.classList.toggle('dashboard-view',!slug&&!!S.user&&!!S.b);app.classList.toggle('customer-view',!!slug&&!!S.ped);app.innerHTML=(pag?paginaView():slug?lojaView():painelView())+RODAPE+(S.modal&&S.b?modalHTML():'');if(S.modal&&S.modal.t==='pedido'&&S.meu&&S.meu.status==='ativo')drawQR();if(S.modal&&['reservar','sacola'].includes(S.modal.t))fretePrev()}
 
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b||!db)return;const a=b.dataset.act,v=b.dataset.v;
 if(a==='fechar'&&b.classList.contains('ov')&&e.target!==b)return;
