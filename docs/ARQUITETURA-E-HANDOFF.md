@@ -379,7 +379,7 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 **Acompanhamento**
 - RN-22. Etapas após o pagamento: preparando, depois pronto para retirada (retirada) ou enviado/saiu para entrega (entrega local e envio), depois entregue.
 - RN-23. O rastreio (até 60 caracteres) e a foto do comprovante de postagem aparecem na página do pedido. O link de rastreamento dos Correios é genérico (não leva o código).
-- RN-24. A cliente confirma o recebimento quando o pedido está enviado ou pronto. Isso fecha o pedido e permite nota (1 a 5) e comentário. Cada pedido gera no máximo um depoimento.
+- RN-24. A cliente confirma o recebimento quando o pedido está enviado, pronto ou marcado como entregue. Se o brechó marcar como entregue antes da confirmação, a página do pedido mostra um aviso com ações para confirmar ou abrir o WhatsApp do brechó com uma mensagem pronta. A confirmação fecha o pedido e permite nota (1 a 5) e comentário. Cada pedido gera no máximo um depoimento.
 - RN-25. A aba Contato mostra os 6 depoimentos mais recentes que tenham texto, só com o primeiro nome.
 - RN-26. Cada pedido tem um código curto (8 primeiros caracteres do identificador) mostrado como `#XXXXXXXX`.
 
@@ -440,7 +440,7 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 - **UC-21 Ver uma peça.** Galeria, ficha técnica, descrição, medidas, informações de entrega e pagamento, peças parecidas, compartilhar no WhatsApp, favoritar.
 - **UC-22 Reservar.** Escolhe a peça, informa nome, WhatsApp e forma de receber (horário, bairro ou endereço, UF e CEP, conforme o caso), vê o frete e o total e confirma. Erros: peça acabou de ser reservada, limite de 2 reservas, entrega indisponível para a região, endereço obrigatório.
 - **UC-23 Pagar.** Vê o valor, o QR Code e o copia e cola, a contagem regressiva, o link de cartão (se houver). Paga no aplicativo do banco e toca em "Já paguei: avisar no WhatsApp".
-- **UC-24 Acompanhar o pedido.** Pela página do pedido (link próprio, que também chega na mensagem do dono): etapas, valores, onde retirar (com rota), rastreio e comprovante.
+- **UC-24 Acompanhar o pedido.** Pela página do pedido (link próprio, que também chega na mensagem do dono): etapas, valores, onde retirar (com rota), rastreio e comprovante. Se o brechó marcar como entregue, a cliente pode confirmar o recebimento ou falar com o brechó pelo WhatsApp.
 - **UC-25 Confirmar o recebimento e deixar depoimento** (RN-24).
 - **UC-26 Voltar ao pedido depois.** O navegador guarda o último pedido daquela loja; também é possível abrir o link `?pedido=`.
 - **UC-27 Montar sacola.** Adicionar/remover até 10 peças do mesmo brechó, escolher uma única forma de receber, conferir subtotal/frete/total e criar uma reserva agrupada com uma única confirmação e um único Pix.
