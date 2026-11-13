@@ -2,7 +2,7 @@
 
 Documento em português para qualquer pessoa ou IA continuar o projeto sem depender do histórico da conversa. Atualizado após a Atualização 10 e a confirmação do usuário de que a migração 6, a edição de fotos e a sacola funcionaram no Supabase/site reais.
 
-Arquivos do projeto: `index.html` (todo o site), `schema.sql` e `migracao-1` a `migracao-5` (banco de dados), `LEIA-ME.md` (passo a passo de instalação e de cada atualização) e este arquivo.
+Arquivos do projeto: `index.html` (todo o site), `schema.sql` e `migracao-1` a `migracao-7` (banco de dados; nem todos estão neste conjunto de arquivos), `LEIA-ME.md` (passo a passo de instalação e de cada atualização) e este arquivo.
 
 ---
 
@@ -146,6 +146,7 @@ Referências de licitações (caso o projeto B seja retomado): Alerta Licitaçã
 | `migracao-4-vitrine.sql` | Capa, categoria, descrição, medidas, fotos; novo `editar_peca` |
 | `migracao-5-logistica.sql` | Logística, endereços, depoimentos e várias funções (não está neste conjunto de arquivos) |
 | `migracao-6-sacola-e-fotos.sql` | Reservas em sacola, limite de reservas ativo compartilhado, atualização de funções de pedido e RPC para editar fotos |
+| `migracao-7-admin-plataforma.sql` | Administração de brechós: acesso, vencimento de teste, suspensão, auditoria e bloqueio de novas reservas |
 | `LEIA-ME.md` | Não está neste conjunto de arquivos; as instruções operacionais estão neste documento |
 
 ### 4.2 Constantes no topo do script (o usuário precisa preencher a cada novo `index.html`)
@@ -311,6 +312,7 @@ A recuperação de senha volta para `/` com o token no hash e dispara o evento `
 | `depoimentos` | Pública | Só por função; o dono pode apagar |
 | `avisos` | Só o dono | Só o dono |
 | `segredos` | Ninguém pelo site | Ninguém pelo site |
+| `platform_admins`, `platform_brecho_access`, `platform_brecho_audit` | Ninguém diretamente pelo site | Ninguém diretamente pelo site; alterações administrativas somente via RPC autorizada |
 
 ### 6.3 Funções (todas `SECURITY DEFINER`, `search_path = public`)
 
@@ -328,8 +330,14 @@ A recuperação de senha volta para `/` com o token no hash e dispara o evento `
 | `marcar_peca(p_id, p_status)` | Dono | `vendida` ou `disponivel`; cancela pedidos ativos da peça |
 | `status_pedido(p_id)` | Todos | **Legado, sem uso no site atual** |
 | `enviar_telegram`, `avisar_reserva` (gatilho), `testar_aviso()` | Interno, gatilho e dono | Aviso por Telegram a cada novo pedido, se houver Id e token; erros silenciosos |
+| `brecho_acesso_proprio()` | Dono autenticado | Retorna o status e a disponibilidade pública do próprio brechó |
+| `admin_is_platform_admin()` | Usuário autenticado | Confere a autorização na tabela privada `platform_admins` |
+| `admin_list_brechos()` | Administrador da plataforma | Lista brechós, responsáveis, situação e vencimento de teste |
+| `admin_list_brecho_audit(p_limit)` | Administrador da plataforma | Lista alterações administrativas recentes (limite máximo de 100) |
+| `admin_set_brecho_acesso(p_brecho_id, p_status, p_trial_ends_at)` | Administrador da plataforma | Atualiza acesso e vencimento e registra a alteração na auditoria |
+| `brecho_publico_ativo(p_brecho_id)` | Políticas e gatilhos | Retorna falso para brechó suspenso ou com teste vencido |
 
-**Códigos de erro devolvidos pelo banco:** `indisponivel`, `limite`, `entrega_indisponivel`, `metodo_invalido`, `endereco_obrigatorio`, `pagamento_invalido`, `nao_permitido`, `status_invalido`, `etapa_invalida`. O site traduz os de reserva em `ERR`.
+**Códigos de erro devolvidos pelo banco:** `indisponivel`, `brecho_indisponivel`, `limite`, `entrega_indisponivel`, `metodo_invalido`, `endereco_obrigatorio`, `pagamento_invalido`, `nao_permitido`, `status_invalido`, `etapa_invalida`. O site traduz os de reserva em `ERR`.
 
 ### 6.4 Storage
 
@@ -341,7 +349,7 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 
 ### 6.6 Ordem de execução do SQL
 
-`schema.sql`, depois `migracao-2`, `3`, `4`, `5` (e `1` se for usar Telegram; a 1 é independente). Os arquivos usam `if not exists` e `drop ... if exists` na maior parte, mas as políticas do `schema.sql` e da migração 1 não são idempotentes. **Não rode `schema.sql` duas vezes.**
+`schema.sql`, depois `migracao-2`, `3`, `4`, `5`, `6` e `7` (e `1` se for usar Telegram; a 1 é independente). Confirme que cada migração anterior foi aplicada antes de executar a próxima. A migração 7 remove e recria as políticas RLS de `brechos`, `pecas` e `depoimentos` para impedir que políticas públicas antigas mantenham dados de lojas suspensas visíveis. Como o schema original não está neste conjunto de arquivos, antes de aplicar a migração 7 confira no Supabase se as políticas instaladas correspondem às regras da seção 6.2; não prossiga se houver políticas ou regras adicionais que precisem ser preservadas. As políticas do `schema.sql` e da migração 1 não são idempotentes. **Não rode `schema.sql` duas vezes.**
 
 ---
 
@@ -520,12 +528,23 @@ O dono abre o bot, toca em Iniciar, obtém o próprio Id no `@userinfobot` e col
 ### 12.1 Montar do zero
 
 1. Criar projeto no Supabase (plano gratuito).
-2. No SQL Editor, rodar `schema.sql` e depois `migracao-2`, `3`, `4` e `5` (e `1`, se for usar Telegram). A migração 6 deve ser executada somente depois de confirmar que a migração 5 está aplicada.
+2. No SQL Editor, rodar `schema.sql` e depois `migracao-2`, `3`, `4`, `5` e `6` (e `1`, se for usar Telegram). A migração 7 é opcional para quem não usará a administração; execute-a somente depois de confirmar que as migrações 1 a 6 necessárias estão aplicadas. Antes, revise no Supabase as políticas existentes de `brechos`, `pecas` e `depoimentos`, pois a migração 7 as recria.
 3. Em Settings, API, copiar a URL e a chave pública.
 4. Em Authentication, Sign In / Providers, Email: ativado e, se achar a opção, desligar "Confirm email". Senão, criar contas manualmente com Auto Confirm.
 5. Criar um repositório público no GitHub, enviar o `index.html` com as chaves coladas, ativar Settings, Pages, Deploy from a branch, `main`, `/ (root)`.
 6. No Supabase, Authentication, URL Configuration: Site URL com o endereço do Pages; Redirect URLs com o endereço e com `/**`.
 7. Entrar no endereço principal, criar a conta e o brechó, preencher as abas Loja e Entrega, cadastrar peças.
+8. Para habilitar a administração, criar uma conta de usuário separada pelo site e, depois de aplicar a migração 7, autorizá-la manualmente pelo SQL Editor. Substitua o e-mail pelo da conta criada:
+
+   ```sql
+   insert into public.platform_admins (user_id)
+   select id from auth.users where email = 'admin@exemplo.com'
+   on conflict (user_id) do nothing;
+   ```
+
+   Confira que a consulta inseriu exatamente uma conta. A tela administrativa é identificada pelo banco, não por uma configuração no navegador. Não autorize a conta de um brechó como administradora.
+
+Na administração, o status `Suspenso` oculta a vitrine e bloqueia novas reservas, mas preserva o acesso do brechó aos pedidos existentes. Um fim de teste no passado também torna a vitrine indisponível; deixar a data vazia significa sem vencimento. O painel oferece suspensão/reativação e auditoria, não exclusão permanente. A migração 7 ainda precisa ser aplicada e testada no projeto Supabase real antes de liberar o recurso.
 
 ### 12.2 Atualizar o site
 
@@ -560,9 +579,12 @@ Criar um bot no `@BotFather` (guardar token e usuário). Rodar `migracao-1`. Gua
 - **Atualização 10 (parcial):** as telas de troca de senha e moderação de depoimentos foram exercitadas no navegador com dados e respostas Supabase simulados. A validação de senha divergente e a chamada de remoção simulada foram conferidas; nada foi gravado ou alterado no Supabase real.
 - **Atualização 10:** sacola no navegador, formulário de reserva agrupada, gestão de fotos, leitura de itens do pedido e ações no painel foram implementados. A migração corrige o gatilho para notificar depois da inclusão dos itens e registra falhas de Telegram como warning. O usuário informou que executou a migração sem erro; não houve validação independente nem teste de todos os cenários de banco.
 - **Validação posterior da Atualização 10 pelo usuário:** confirmou que a migração 6 rodou sem erro e que a edição de fotos e a sacola deram certo no site. O usuário não descreveu o roteiro exato nem confirmou o teste de cada cenário-limite.
+- **Administração da plataforma:** a página local abriu no navegador e renderizou o login sem erro de execução aparente. Isso é apenas uma verificação de carregamento: não simulou uma conta administradora, não testou os RPCs e não acessou o Supabase.
 
 **O que NÃO foi verificado**
-- Não há Node.js nem cliente PostgreSQL disponível neste ambiente; o JavaScript foi conferido pelo navegador, mas não houve validação sintática do SQL.
+- Não há Node.js nem cliente PostgreSQL disponível neste ambiente; a migração 7 não foi validada por um parser SQL nem executada no Supabase.
+- Administração: não foram testados login da conta autorizada, busca, alteração de status, datas de teste, auditoria, visibilidade pública nem bloqueio real de reservas.
+- Antes da migração 7, revisar as políticas RLS efetivamente instaladas em `brechos`, `pecas` e `depoimentos`, pois o arquivo recria todas as políticas dessas tabelas; os arquivos do schema original não estão neste workspace.
 - Não foi feito aqui um teste independente do Supabase real; a confirmação da execução da migração 6 e dos dois fluxos principais veio do usuário.
 - Cenários de concorrência na reserva atômica, limite de duas reservas ativas, limite de 10 peças, expiração/cancelamento, frete nas diferentes formas de entrega, pedido agrupado no painel, recebimento/depoimento e notificação Telegram ainda precisam de verificação específica.
 - O código Pix deve ser conferido no aplicativo bancário antes de usar em vendas reais.
@@ -581,6 +603,7 @@ Criar um bot no `@BotFather` (guardar token e usuário). Rodar `migracao-1`. Gua
 9. Na loja de teste, adicionar 2 a 3 peças à sacola, remover uma, confirmar subtotal e frete único e fazer uma reserva; verificar o mesmo pedido no painel e no link público.
 10. Tentar reservar uma peça já reservada por outra sessão e testar o limite de 10; confirmar que a falha não deixa nenhuma peça da sacola reservada.
 11. No painel, manter/remover fotos, adicionar até cinco no total e tentar salvar uma sexta; conferir a galeria pública.
+12. Em um projeto de teste, após revisar as políticas RLS e aplicar a migração 7, autorizar uma conta separada como administradora; verificar listagem/busca, suspensão e reativação, vencimento de teste, histórico e bloqueio de novas reservas. Confirmar também que o brechó suspenso continua vendo os pedidos antigos.
 
 ---
 
@@ -593,7 +616,7 @@ Criar um bot no `@BotFather` (guardar token e usuário). Rodar `migracao-1`. Gua
 5. Duplicidades: o campo `cidade` aparece nas abas Loja e Entrega; `pedidos.entrega` (rótulo) e `pedidos.metodo` guardam quase a mesma coisa; a coluna `brechos.endereco` e a função `status_pedido` são legadas.
 6. Reserva com pagamento na retirada mostra o contador como "1440:00" em vez de horas.
 7. As telas de alteração de senha, moderação de depoimentos e troca de fotos existem, mas aguardam validação no Supabase real.
-8. Um único brechó por conta; sem painel de operador para você ver todos os brechós.
+8. Um único brechó por conta. O painel administrativo da plataforma foi implementado, mas depende da migração 7, da revisão de RLS e da autorização manual da conta administradora; não oferece exclusão permanente.
 9. O cálculo de frete depende do estado informado pela cliente.
 10. Prévia do link no WhatsApp e no Instagram mostra um título genérico, porque o site é montado no navegador. Resolver exigiria renderização no servidor.
 11. Reservas só são liberadas quando alguém consulta o banco (expiração preguiçosa). Em loja parada, a peça continua marcada como reservada até o próximo acesso.
