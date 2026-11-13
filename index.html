@@ -254,6 +254,31 @@ body{background:radial-gradient(ellipse at 92% 3%,color-mix(in srgb,var(--ac) 9%
 .stock-empty{padding:18px;border:1px dashed var(--bd);border-radius:12px;color:var(--mut)}
 .order-expiry{display:block;color:var(--wr);font-size:.84rem;font-weight:650;margin-top:5px}
 @media(max-width:640px){.stock-item{min-width:100%}.stock-row>span:last-child{width:100%;display:flex;flex-wrap:wrap;gap:6px}.stock-row>span:last-child button{flex:1 1 auto}}
+:root{--sage:#3f7355;--honey:#956719;--blue:#5f789b}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--sage:#8fc7a0;--honey:#e1b866;--blue:#a8bfdf}}
+.s-disponivel{color:var(--sage)}
+.s-reservada{color:var(--honey)}
+.hero-note .editorial-kicker,.hero-count,.collection-count{color:var(--sage)}
+.store-category:nth-child(3n+1){background:color-mix(in srgb,var(--sage) 7%,var(--card));border-color:color-mix(in srgb,var(--sage) 28%,var(--bd))}
+.store-category:nth-child(3n+1) small{color:var(--sage)}
+.store-category:nth-child(3n+2){background:color-mix(in srgb,var(--honey) 7%,var(--card));border-color:color-mix(in srgb,var(--honey) 28%,var(--bd))}
+.store-category:nth-child(3n+2) small{color:var(--honey)}
+.store-category:nth-child(3n){background:color-mix(in srgb,var(--blue) 7%,var(--card));border-color:color-mix(in srgb,var(--blue) 28%,var(--bd))}
+.store-category:nth-child(3n) small{color:var(--blue)}
+.store-category:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+.store-guide{background:color-mix(in srgb,var(--sage) 10%,var(--card));border-top:4px solid var(--sage);color:var(--fg)}
+.store-guide h2{color:var(--fg)}
+.store-guide>p{color:var(--mut)}
+.store-guide .store-step{background:var(--card);border-color:color-mix(in srgb,var(--sage) 24%,var(--bd))}
+.store-guide .store-step span{color:var(--mut)}
+.store-guide .store-step:nth-child(1){border-top:3px solid var(--sage)}
+.store-guide .store-step:nth-child(1) b{color:var(--sage)}
+.store-guide .store-step:nth-child(2){border-top:3px solid var(--honey)}
+.store-guide .store-step:nth-child(2) b{color:var(--honey)}
+.store-guide .store-step:nth-child(3){border-top:3px solid var(--blue)}
+.store-guide .store-step:nth-child(3) b{color:var(--blue)}
+.store-about{padding-inline:clamp(18px,4vw,34px);border:0;border-left:4px solid var(--blue);border-radius:4px 20px 4px 20px;background:color-mix(in srgb,var(--blue) 8%,var(--card))}
+.item-actions [data-act="sacola-adicionar"],.cb [data-act="sacola-adicionar"]{border-color:color-mix(in srgb,var(--sage) 45%,var(--bd));color:var(--sage)}
 </style>
 </head>
 <body>
